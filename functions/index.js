@@ -162,6 +162,7 @@ app.post('/callback', line.middleware(config), (req, res) => {
 
 app.use(bodyParser.json());
 
+// for notification
 app.post('/notification', (req, res) => {
     const noti = req.body;
     console.log("Klod's", req.body);
@@ -170,6 +171,14 @@ app.post('/notification', (req, res) => {
         text: "Got klod's message"
     }));
 })
+
+app.post('/dailynoti', (req, res) => {
+    const users = req.body.users;
+    for (let user of users){
+        const payloadJson = await get_assignments(user);
+        return client.pushMessage(user, payloadJson)
+    }
+}
 
 app.listen(3000);
 
