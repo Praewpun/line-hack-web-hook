@@ -141,7 +141,7 @@ async function handleCourseFiles(token, course_ids, course_index, user_id) {
 
 async function handleTeacherContact(token, course_ids, course_index, user_id) {
     const course_id = course_ids[course_index];
-    const payloadJson = await get_teacher_name(course_id);
+    const payloadJson = await get_teacher_name(course_id,user_id);
     return client.replyMessage(token, payloadJson);
 }
 
@@ -167,6 +167,14 @@ async function handleNotification(user_id,response) {
     // user_id
     return client.pushMessage('Uc353e2263c4863cc9609d13d3ed229f6', payloadJson);
 }
+
+app.post('/dailynoti', (req, res) => {
+    const users = req.body.users;
+    for (let user of users){
+        const payloadJson = await get_assignments(user);
+        return res.send(client.pushMessage(user, payloadJson));
+    }
+});
 
 app.listen(3000);
 
