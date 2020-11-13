@@ -2,15 +2,13 @@ const axios = require('axios');
 const { get_course_names } = require('./get_course_names');
 
 async function get_assignments(user_id) {
-    console.log("user_id = ",user_id);
-    const res = await axios.get(`${process.env.BACKEND_URL}/courses/getAllWork/${user_id}`);
-    console.log("The response is done generating");
-    const result = make_carousels(res.data, user_id);
+    const res = await axios.get(`https://mana.roadrei.com/courses/getAllWork/${user_id}`);
+    const result = make_carousels(res.data);
     return result;
 }
 
-async function make_carousels(result, user_id) {
-    const courses = await get_course_names(user_id);
+async function make_carousels(result) {
+    const courses = await get_course_names();
     const course_names = courses[0];
     const course_ids = courses[1];
     let result_columns = [];
@@ -152,12 +150,11 @@ async function make_carousels(result, user_id) {
     result_columns.sort(function (x, y) {
         return x.timeDiff - y.timeDiff;
     });
-
     let top_columns = [];
     let top_len = result_columns.length;
 
-    if (result_columns.length > 10) {
-        top_len = 10;
+    if (result_columns.length > 12) {
+        top_len = 12;
     }
     for (i = 0; i < top_len; i++) {
         top_columns.push(result_columns[i].body);
@@ -173,7 +170,7 @@ async function make_carousels(result, user_id) {
             }
         }
     ]
-    return res_carousel;
+    return res_carousel[0];
 }
 
 function diff_minutes(duedate, today) {

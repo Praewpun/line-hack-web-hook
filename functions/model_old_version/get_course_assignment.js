@@ -1,24 +1,22 @@
 const axios = require('axios');
 const { get_course_names } = require('./get_course_names');
 
-async function get_assignments(user_id) {
-    console.log("user_id = ",user_id);
-    const res = await axios.get(`${process.env.BACKEND_URL}/courses/getAllWork/${user_id}`);
-    console.log("The response is done generating");
-    const result = make_carousels(res.data, user_id);
+async function get_course_assignments(course_id,user_id) {
+    const res = await axios.get(`https://mana.roadrei.com/courses/assignments/${course_id}/${user_id}`);
+    const result = make_carousels(res.data, course_id);
     return result;
 }
 
-async function make_carousels(result, user_id) {
-    const courses = await get_course_names(user_id);
+async function make_carousels(result, course_id) {
+    const courses = await get_course_names();
     const course_names = courses[0];
     const course_ids = courses[1];
+    const course_index = course_ids.indexOf(course_id);
+    const course_name = course_names[course_index];
     let result_columns = [];
     for (i = 0; i < result.length; i++) {
-        const course_index = course_ids.indexOf(result[i].courseId);
-        const course_name = course_names[course_index];
         const name = result[i].title.substring(0, 39);
-        let alertColor = "#33cc33";   // default = green
+        let alertColor = "#33cc33";   //// default = green
         let duedate = "Not assigned";
         let uri = "No uri given"
         if (typeof result[i].dueDate != 'undefined') {
@@ -148,16 +146,15 @@ async function make_carousels(result, user_id) {
             result_columns.push(a_column);
         }
     }
-    // //Descending deadline
+    //Descending deadline
     result_columns.sort(function (x, y) {
         return x.timeDiff - y.timeDiff;
     });
-
     let top_columns = [];
     let top_len = result_columns.length;
 
-    if (result_columns.length > 10) {
-        top_len = 10;
+    if (result_columns.length > 12) {
+        top_len = 12;
     }
     for (i = 0; i < top_len; i++) {
         top_columns.push(result_columns[i].body);
@@ -166,11 +163,15 @@ async function make_carousels(result, user_id) {
     res_carousel = [
         {
             "type": "flex",
-            "altText": "This is a Flex Message",
+            "altText": "Assignments in the course",
             "contents": {
                 "type": "carousel",
                 "contents": top_columns
-            }
+            },
+            "sender": {
+                "name": course_name,
+                "iconUrl": "https://cdn.iconscout.com/icon/free/png-256/teacher-240-1128987.png"
+            } 
         }
     ]
     return res_carousel;
@@ -183,4 +184,4 @@ function diff_minutes(duedate, today) {
     return Math.abs(Math.round(diff));
 }
 
-module.exports = { get_assignments };
+module.exports = { get_course_assignments };

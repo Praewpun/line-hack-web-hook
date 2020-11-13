@@ -2,7 +2,7 @@ const axios = require('axios');
 const { get_course_names } = require('./get_course_names');
 
 async function get_teacher_name(course_id,user_id) {
-    const res = await axios.get(`${process.env.BACKEND_URL}/courses/teacher/${course_id}/${user_id}`);
+    const res = await axios.get(`https://mana.roadrei.com/courses/teacher/${course_id}/${user_id}`);
     const result = make_carousels(res.data,course_id);
     return result;
 }
@@ -22,5 +22,3 @@ async function make_carousels(result,course_id) {
 }
 
 module.exports = { get_teacher_name };
-
-process.env.BACKEND_URL;

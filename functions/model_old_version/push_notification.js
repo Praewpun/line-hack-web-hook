@@ -1,7 +1,6 @@
 const axios = require('axios');
 
 async function get_notification(result) {
-    console.log(JSON.stringify(result));
     const course_name = result.courseName;
     const work_title = result.workInfo.workTitle;
     let work_description = "No work description is given";
@@ -570,10 +569,6 @@ async function get_notification(result) {
             "contents": {
                 "type": "carousel",
                 "contents": result_send
-            },
-            "sender": {
-                "name": course_name,
-                "iconUrl": "https://cdn3.vectorstock.com/i/1000x1000/87/27/teacher-icon-flat-style-vector-20708727.jpg"
             }
         }
     ]

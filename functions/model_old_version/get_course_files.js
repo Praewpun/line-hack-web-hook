@@ -1,15 +1,15 @@
 const axios = require('axios');
 const { get_course_names } = require('./get_course_names');
 
-async function get_course_files(course_id, user_id) {
-    const res = await axios.get(`${process.env.BACKEND_URL}/course/materials/${course_id}/${user_id}`);
-    const result = make_carousels(res.data, course_id, user_id);
+async function get_course_files(course_id,user_id) {
+    const res = await axios.get(`https://mana.roadrei.com/course/materials/${course_id}/${user_id}`);
+    const result = make_carousels(res.data, course_id);
     return result;
 }
 
-async function make_carousels(result, course_id, user_id) {
+async function make_carousels(result, course_id) {
     let result_columns = [];
-    const courses = await get_course_names(user_id);
+    const courses = await get_course_names();
     const course_names = courses[0];
     const course_ids = courses[1];
     const course_index = course_ids.indexOf(course_id);
@@ -120,7 +120,7 @@ async function make_carousels(result, course_id, user_id) {
             "sender": {
                 "name": course_name,
                 "iconUrl": "https://cdn3.vectorstock.com/i/1000x1000/87/27/teacher-icon-flat-style-vector-20708727.jpg"
-            }
+            } 
         }
     ]
     return res_carousel;
@@ -128,4 +128,5 @@ async function make_carousels(result, course_id, user_id) {
 
 module.exports = { get_course_files };
 
-process.env.BACKEND_URL;
+
+            

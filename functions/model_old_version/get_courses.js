@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 async function get_courses(user_id) {
-  const res = await axios.get(`${process.env.BACKEND_URL}/courses/${user_id}`);
+  const res = await axios.get(`https://mana.roadrei.com/courses/${user_id}`);
   const result = make_carousels(res.data);
   return result;
 }
