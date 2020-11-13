@@ -178,7 +178,7 @@ app.post('/dailynoti', (req, res) => {
         const payloadJson = await get_assignments(user);
         return client.pushMessage(user, payloadJson)
     }
-}
+});
 
 app.listen(3000);
 
