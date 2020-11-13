@@ -1,8 +1,8 @@
 const axios = require('axios');
 const { get_course_names } = require('./get_course_names');
 
-async function get_assignments() {
-    const res = await axios.get('https://us-central1-mana-test-294607.cloudfunctions.net/app/courses/getAllWork');
+async function get_assignments(user_id) {
+    const res = await axios.get(`https://us-central1-mana-test-294607.cloudfunctions.net/app/courses/getAllWork/${user_id}`);
     const result = make_carousels(res.data);
     return result;
 }
@@ -135,7 +135,7 @@ async function make_carousels(result) {
                                 "action": {
                                     "type": "uri",
                                     "label": "ส่งงาน",
-                                    "uri": uri
+                                    "uri": "https://mana-liff.web.app"
                                 },
                                 "style": "primary"
                             }

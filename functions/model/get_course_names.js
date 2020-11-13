@@ -1,7 +1,8 @@
 const axios = require('axios');
 
-async function get_course_names() {
-  const res = await axios.get('https://us-central1-mana-test-294607.cloudfunctions.net/app/courses');
+async function get_course_names(user_id) {
+  // const res = await axios.get(`https://us-central1-mana-test-294607.cloudfunctions.net/app/courses/${user_id}`);
+  const res = await axios.get(`https://us-central1-mana-test-294607.cloudfunctions.net/app/courses`);
   const result = make_names(res.data);
   const course_name = result[0];
   const course_id = result[1];

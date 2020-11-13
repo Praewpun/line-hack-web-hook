@@ -9,6 +9,7 @@ const { get_course_assignments } = require('./model/get_course_assignment');
 const { get_course_files } = require('./model/get_course_files');
 const { register_course } = require('./model/register_course');
 const { get_teacher_name } = require('./model/get_teacher_contact');
+const { get_notification } = require('./model/push_notification');
 const { default: Axios } = require('axios');
 
 const config = {
@@ -23,6 +24,8 @@ app.post('/webhook', line.middleware(config), async (req, res) => {
     const course_names = courses[0];
     const course_ids = courses[1];
     const input_text = await req.body.events[0].message.text;
+    const user_id = await req.body.events[0].source.userId;
+    const token = req.body.events[0].replyToken;
 
     if (/ขอไฟล์/.test(input_text)) {
         console.log("There's match in file-in-course request");
@@ -31,12 +34,10 @@ app.post('/webhook', line.middleware(config), async (req, res) => {
         const course_index = course_names.indexOf(course_name);
         if (course_index != -1) {
             console.log("There's a match in given course name in course name list");
-            const token = req.body.events[0].replyToken;
-            const result = await handleCourseFiles(token, course_ids, course_index);
+            const result = await handleCourseFiles(token, course_ids, course_index, user_id);
             res.send(result);
         } else {
             const payloadJson = await register_course();
-            const token = req.body.events[0].replyToken;
             res.send(client.replyMessage(token, payloadJson));
         }
     } else if (/ของาน/.test(input_text)) {
@@ -45,12 +46,10 @@ app.post('/webhook', line.middleware(config), async (req, res) => {
         const course_index = course_names.indexOf(course_name);
         if (course_index != -1) {
             console.log("There's a match in given course name in course name list");
-            const token = req.body.events[0].replyToken;
-            const result = await handleCourseAssignments(token, course_ids, course_index);
+            const result = await handleCourseAssignments(token, course_ids, course_index, user_id);
             res.send(result);
         } else {
             const payloadJson = await register_course();
-            const token = req.body.events[0].replyToken;
             res.send(client.replyMessage(token, payloadJson));
         }
     } else if (/ขอข้อมูลอาจารย์/.test(input_text)) {
@@ -60,25 +59,27 @@ app.post('/webhook', line.middleware(config), async (req, res) => {
         const course_index = course_names.indexOf(course_name);
         if (course_index != -1) {
             console.log("There's a match in given course name in course name list");
-            const token = req.body.events[0].replyToken;
-            const result = await handleTeacherContact(token, course_ids, course_index);
+            const result = await handleTeacherContact(token, course_ids, course_index, user_id);
             res.send(result);
         } else {
-            const token = req.body.events[0].replyToken;
-            res.send(client.replyMessage(token, {text:'text',text:"ไม่มีข้อมูลอาจารย์คนนี้นะ"}));
+            res.send(client.replyMessage(token, { text: 'text', text: "ไม่มีข้อมูลอาจารย์คนนี้นะ" }));
         }
     } else if (input_text == "คอร์สเรียน") {
         console.log("There's match in courses request");
-        Promise
-            .all(req.body.events.map(handleCourses))
-            .then((result) => res.json(result))
-            .catch(err => res.send(client.replyMessage(req.body.events[0].replyToken, { type: 'text', text: "There is no registered course at the moment" })));
+        try {
+            const result = await handleCourses(token, user_id);
+            res.send(result);
+        } catch (error) {
+            res.send(client.replyMessage(token, { type: 'text', text: "There is no registered course at the moment" }))
+        }
     } else if (input_text == "งานที่ต้องส่ง") {
         console.log("There's match in assignments request");
-        Promise
-            .all(req.body.events.map(handleAssignments))
-            .then((result) => res.json(result))
-            .catch(err => res.send(client.replyMessage(req.body.events[0].replyToken, { type: 'text', text: "There are no assignments dued within the next 7 days" })));
+        try {
+            const result = await handleAssignments(token, user_id);
+            res.send(result);
+        } catch (error) {
+            res.send(client.replyMessage(token, { type: 'text', text: "There are no assignments dued within the next 7 days" }));
+        }
     } else {
         Promise
             .all(req.body.events.map(handleEvent))
@@ -88,19 +89,20 @@ app.post('/webhook', line.middleware(config), async (req, res) => {
 
 const client = new line.Client(config);
 
-async function handleCourses(event) {
-    const payloadJson = await get_courses();
-    return client.replyMessage(event.replyToken, payloadJson);
+async function handleCourses(token, user_id) {
+    console.log("handleCourses");
+    const payloadJson = await get_courses(user_id);
+    return client.replyMessage(token, payloadJson);
 }
 
-async function handleAssignments(event) {
-    const payloadJson = await get_assignments();
-    return client.replyMessage(event.replyToken, payloadJson);
+async function handleAssignments(token, user_id) {
+    const payloadJson = await get_assignments(user_id);
+    return client.replyMessage(token, payloadJson);
 }
 
-async function handleCourseAssignments(token, course_ids, course_index) {
+async function handleCourseAssignments(token, course_ids, course_index, user_id) {
     const course_id = course_ids[course_index];
-    let payloadJson = await get_course_assignments(course_id);
+    let payloadJson = await get_course_assignments(course_id,user_id);
     const courses = await get_course_names();
     const course_names = courses[0];
     const course_name = course_names[course_index];
@@ -117,10 +119,10 @@ async function handleCourseAssignments(token, course_ids, course_index) {
     return client.replyMessage(token, payloadJson);
 }
 
-async function handleCourseFiles(token, course_ids, course_index) {
+async function handleCourseFiles(token, course_ids, course_index, user_id) {
     try {
         const course_id = course_ids[course_index];
-        const payloadJson = await get_course_files(course_id);
+        const payloadJson = await get_course_files(course_id,user_id);
         return client.replyMessage(token, payloadJson);
     } catch (error) {
         const courses = await get_course_names();
@@ -137,11 +139,11 @@ async function handleCourseFiles(token, course_ids, course_index) {
     }
 }
 
-async function handleTeacherContact(token, course_ids, course_index) {
+async function handleTeacherContact(token, course_ids, course_index, user_id) {
     const course_id = course_ids[course_index];
     const payloadJson = await get_teacher_name(course_id);
     return client.replyMessage(token, payloadJson);
-  }
+}
 
 async function handleEvent(event) {
     return client.replyMessage(event.replyToken, {
@@ -150,26 +152,21 @@ async function handleEvent(event) {
     });
 }
 
-app.post('/callback', line.middleware(config), (req, res) => {
-    Promise
-    .all(req.body.events.map(handleEvent))
-    .then((result) => res.json(result))
-    .catch((error) => {
-        console.error(error);
-        res.status(500).end();
-    })
-})
-
 app.use(bodyParser.json());
 
-app.post('/notification', (req, res) => {
-    const noti = req.body;
-    console.log("Klod's", req.body);
-    return res.send(client.multicast([req.line_id], {
-        type: 'text',
-        text: "Got klod's message"
-    }));
+app.post('/notification', async (req, res) => {
+    const response = req.body;
+    console.log("There is notfication sent ", response);
+    const user_id = req.body.userId;
+    const result = await handleNotification(user_id,response);
+    return res.send(result);
 })
+
+async function handleNotification(user_id,response) {
+    const payloadJson = await get_notification(response);
+    // user_id
+    return client.pushMessage('Uc353e2263c4863cc9609d13d3ed229f6', payloadJson);
+}
 
 app.listen(3000);
 

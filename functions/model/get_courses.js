@@ -1,7 +1,10 @@
 const axios = require('axios');
 
-async function get_courses() {
-  const res = await axios.get('https://us-central1-mana-test-294607.cloudfunctions.net/app/courses');
+async function get_courses(user_id) {
+  // const res = await axios.get(`https://us-central1-mana-test-294607.cloudfunctions.net/app/courses/${user_id}`);
+  console.log("Before get courses");
+  const res = await axios.get(`https://us-central1-mana-test-294607.cloudfunctions.net/app/courses`);
+  console.log("After get courses");
   const result = make_carousels(res.data);
   return result;
 }
